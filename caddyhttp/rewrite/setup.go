@@ -90,10 +90,11 @@ func rewriteParse(c *caddy.Controller) ([]httpserver.HandlerConfig, error) {
 			if to == "" {
 				return nil, c.ArgErr()
 			}
-			if rule, err = NewComplexRule(base, pattern, to, ext, matcher); err != nil {
+			cRule, err := NewComplexRule(base, pattern, to, ext, matcher)
+			if err != nil {
 				return nil, err
 			}
-			rules = append(rules, rule)
+			rules = append(rules, *cRule)
 
 		// the only unhandled case is 2 and above
 		default:

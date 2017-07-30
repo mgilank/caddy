@@ -97,14 +97,14 @@ func TestRewriteParse(t *testing.T) {
 			r	.*
 			to	/to /index.php?
 		 }`, false, []Rule{
-			&ComplexRule{Base: "/", To: "/to /index.php?", Regexp: regexp.MustCompile(".*")},
+			ComplexRule{Base: "/", To: "/to /index.php?", Regexp: regexp.MustCompile(".*")},
 		}},
 		{`rewrite {
 			regexp	.*
 			to		/to
 			ext		/ html txt
 		 }`, false, []Rule{
-			&ComplexRule{Base: "/", To: "/to", Exts: []string{"/", "html", "txt"}, Regexp: regexp.MustCompile(".*")},
+			ComplexRule{Base: "/", To: "/to", Exts: []string{"/", "html", "txt"}, Regexp: regexp.MustCompile(".*")},
 		}},
 		{`rewrite /path {
 			r	rr
@@ -115,27 +115,27 @@ func TestRewriteParse(t *testing.T) {
 		 	to 		/to /to2
 		 }
 		 `, false, []Rule{
-			&ComplexRule{Base: "/path", To: "/dest", Regexp: regexp.MustCompile("rr")},
-			&ComplexRule{Base: "/", To: "/to /to2", Regexp: regexp.MustCompile("[a-z]+")},
+			ComplexRule{Base: "/path", To: "/dest", Regexp: regexp.MustCompile("rr")},
+			ComplexRule{Base: "/", To: "/to /to2", Regexp: regexp.MustCompile("[a-z]+")},
 		}},
 		{`rewrite {
 			r	.*
 		 }`, true, []Rule{
-			&ComplexRule{},
+			ComplexRule{},
 		}},
 		{`rewrite {
 
 		 }`, true, []Rule{
-			&ComplexRule{},
+			ComplexRule{},
 		}},
 		{`rewrite /`, true, []Rule{
-			&ComplexRule{},
+			ComplexRule{},
 		}},
 		{`rewrite {
 			if {path} match /
 			to		/to
 		 }`, false, []Rule{
-			&ComplexRule{Base: "/", To: "/to"},
+			ComplexRule{Base: "/", To: "/to"},
 		}},
 	}
 
@@ -156,8 +156,8 @@ func TestRewriteParse(t *testing.T) {
 		}
 
 		for j, e := range test.expected {
-			actualRule := actual[j].(*ComplexRule)
-			expectedRule := e.(*ComplexRule)
+			actualRule := actual[j].(ComplexRule)
+			expectedRule := e.(ComplexRule)
 
 			if actualRule.Base != expectedRule.Base {
 				t.Errorf("Test %d, rule %d: Expected Base=%s, got %s",
@@ -175,13 +175,25 @@ func TestRewriteParse(t *testing.T) {
 			}
 
 			if actualRule.Regexp != nil {
-				if actualRule.String() != expectedRule.String() {
+				actualRuleStr := fmt.Sprintf("%v", actualRule)
+				expectedRuleStr := fmt.Sprintf("%v", actualRule)
+				if actualRuleStr != expectedRuleStr {
 					t.Errorf("Test %d, rule %d: Expected Pattern=%s, got %s",
-						i, j, expectedRule.String(), actualRule.String())
+						i, j, expectedRuleStr, actualRuleStr)
 				}
 			}
-
 		}
-	}
 
+		testRewriteParseString(t, actual, i)
+	}
+}
+
+func testRewriteParseString(t *testing.T, rules []httpserver.HandlerConfig, testIndex int) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("Test %d: Failed to string encode: %#v", testIndex, r)
+		}
+	}()
+	// return value ignored because we just want to know if the formatting generates a panic
+	_ = fmt.Sprintf("%v", rules)
 }

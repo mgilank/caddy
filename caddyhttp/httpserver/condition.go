@@ -53,10 +53,6 @@ const (
 	matchOp      = "match"
 )
 
-func operatorError(operator string) error {
-	return fmt.Errorf("Invalid operator %v", operator)
-}
-
 // ifCondition is a 'if' condition.
 type ifCondition func(string, string) bool
 
@@ -123,7 +119,12 @@ func newIfCond(a, operator, b string) (ifCond, error) {
 		operator = operator[4:]
 	}
 	if _, ok := ifConditions[operator]; !ok {
-		return ifCond{}, operatorError(operator)
+		return ifCond{}, fmt.Errorf("Invalid operator %v", operator)
+	}
+	if operator == matchOp {
+		if _, err := regexp.Compile(b); err != nil {
+			return ifCond{}, fmt.Errorf("Invalid regular expression: '%s', %v", b, err)
+		}
 	}
 	return ifCond{
 		a:   a,
@@ -141,7 +142,9 @@ func (i ifCond) True(r *http.Request) bool {
 		if r != nil {
 			replacer := NewReplacer(r, nil, "")
 			a = replacer.Replace(i.a)
-			b = replacer.Replace(i.b)
+			if i.op != matchOp {
+				b = replacer.Replace(i.b)
+			}
 		}
 		if i.neg {
 			return !c(a, b)

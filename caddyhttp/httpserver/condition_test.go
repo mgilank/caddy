@@ -14,66 +14,72 @@ func TestConditions(t *testing.T) {
 	tests := []struct {
 		condition string
 		isTrue    bool
+		shouldErr bool
 	}{
-		{"a is b", false},
-		{"a is a", true},
-		{"a not b", true},
-		{"a not a", false},
-		{"a has a", true},
-		{"a has b", false},
-		{"ba has b", true},
-		{"bab has b", true},
-		{"bab has bb", false},
-		{"a not_has a", false},
-		{"a not_has b", true},
-		{"ba not_has b", false},
-		{"bab not_has b", false},
-		{"bab not_has bb", true},
-		{"bab starts_with bb", false},
-		{"bab starts_with ba", true},
-		{"bab starts_with bab", true},
-		{"bab not_starts_with bb", true},
-		{"bab not_starts_with ba", false},
-		{"bab not_starts_with bab", false},
-		{"bab ends_with bb", false},
-		{"bab ends_with bab", true},
-		{"bab ends_with ab", true},
-		{"bab not_ends_with bb", true},
-		{"bab not_ends_with ab", false},
-		{"bab not_ends_with bab", false},
-		{"a match *", false},
-		{"a match a", true},
-		{"a match .*", true},
-		{"a match a.*", true},
-		{"a match b.*", false},
-		{"ba match b.*", true},
-		{"ba match b[a-z]", true},
-		{"b0 match b[a-z]", false},
-		{"b0a match b[a-z]", false},
-		{"b0a match b[a-z]+", false},
-		{"b0a match b[a-z0-9]+", true},
-		{"a not_match *", true},
-		{"a not_match a", false},
-		{"a not_match .*", false},
-		{"a not_match a.*", false},
-		{"a not_match b.*", true},
-		{"ba not_match b.*", false},
-		{"ba not_match b[a-z]", false},
-		{"b0 not_match b[a-z]", true},
-		{"b0a not_match b[a-z]", true},
-		{"b0a not_match b[a-z]+", true},
-		{"b0a not_match b[a-z0-9]+", false},
+		{"a is b", false, false},
+		{"a is a", true, false},
+		{"a not b", true, false},
+		{"a not a", false, false},
+		{"a has a", true, false},
+		{"a has b", false, false},
+		{"ba has b", true, false},
+		{"bab has b", true, false},
+		{"bab has bb", false, false},
+		{"a not_has a", false, false},
+		{"a not_has b", true, false},
+		{"ba not_has b", false, false},
+		{"bab not_has b", false, false},
+		{"bab not_has bb", true, false},
+		{"bab starts_with bb", false, false},
+		{"bab starts_with ba", true, false},
+		{"bab starts_with bab", true, false},
+		{"bab not_starts_with bb", true, false},
+		{"bab not_starts_with ba", false, false},
+		{"bab not_starts_with bab", false, false},
+		{"bab ends_with bb", false, false},
+		{"bab ends_with bab", true, false},
+		{"bab ends_with ab", true, false},
+		{"bab not_ends_with bb", true, false},
+		{"bab not_ends_with ab", false, false},
+		{"bab not_ends_with bab", false, false},
+		{"a match *", false, true},
+		{"a match a", true, false},
+		{"a match .*", true, false},
+		{"a match a.*", true, false},
+		{"a match b.*", false, false},
+		{"ba match b.*", true, false},
+		{"ba match b[a-z]", true, false},
+		{"b0 match b[a-z]", false, false},
+		{"b0a match b[a-z]", false, false},
+		{"b0a match b[a-z]+", false, false},
+		{"b0a match b[a-z0-9]+", true, false},
+		{"bac match b[a-z]{2}", true, false},
+		{"a not_match *", false, true},
+		{"a not_match a", false, false},
+		{"a not_match .*", false, false},
+		{"a not_match a.*", false, false},
+		{"a not_match b.*", true, false},
+		{"ba not_match b.*", false, false},
+		{"ba not_match b[a-z]", false, false},
+		{"b0 not_match b[a-z]", true, false},
+		{"b0a not_match b[a-z]", true, false},
+		{"b0a not_match b[a-z]+", true, false},
+		{"b0a not_match b[a-z0-9]+", false, false},
+		{"bac not_match b[a-z]{2}", false, false},
 	}
 
 	for i, test := range tests {
 		str := strings.Fields(test.condition)
 		ifCond, err := newIfCond(str[0], str[1], str[2])
 		if err != nil {
-			t.Error(err)
+			if !test.shouldErr {
+				t.Error(err)
+			}
+			continue
 		}
 		isTrue := ifCond.True(nil)
 		if isTrue != test.isTrue {
-			t.Errorf("Test %d: expected %v found %v", i, test.isTrue, isTrue)
+			t.Errorf("Test %d: '%s' expected %v found %v", i, test.condition, test.isTrue, isTrue)
 		}
 	}
 
